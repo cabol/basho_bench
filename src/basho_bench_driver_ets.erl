@@ -4,13 +4,13 @@
          run/4]).
 
 new(_Id) ->
-    EtsTable = ets:new(basho_bench, [ordered_set]),
-    {ok, EtsTable}.
+    %EtsTable = ets:new(basho_bench, [public, named_table]),
+    {ok, my_ets}.
 
-run(get, KeyGen, _ValueGen, EtsTable) ->
-    Start = KeyGen(),
+run(get, _KeyGen, _ValueGen, EtsTable) ->
+    Start = erlang:phash2(os:timestamp()),%KeyGen(),
     case ets:lookup(EtsTable, Start) of
-        [] -> 
+        [] ->
             {ok, EtsTable};
         [{_Key, _Val}] ->
             {ok, EtsTable};
@@ -18,13 +18,12 @@ run(get, KeyGen, _ValueGen, EtsTable) ->
             {error, Error, EtsTable}
     end;
 
-run(put, KeyGen, ValueGen, EtsTable) ->
-    Object = {KeyGen(), ValueGen()},
+run(put, _KeyGen, ValueGen, EtsTable) ->
+    Object = {erlang:phash2(os:timestamp()), ValueGen()},
     ets:insert(EtsTable, Object),
     {ok, EtsTable};
 
-run(delete, KeyGen, _ValueGen, EtsTable) ->
-    Start = KeyGen(),
+run(delete, _KeyGen, _ValueGen, EtsTable) ->
+    Start = erlang:phash2(os:timestamp()),%KeyGen(),
     ets:delete(EtsTable, Start),
     {ok, EtsTable}.
-    

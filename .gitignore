@@ -7,4 +7,9 @@ package
 .rebar
 *~
 #*#
-
+.DS_Store
+._*
+_*
+*~
+.idea
+*.iml

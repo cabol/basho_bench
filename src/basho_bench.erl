@@ -39,6 +39,10 @@ cli_options() ->
     ].
 
 main(Args) ->
+  shards:start(),
+  shards:new(xyz, [], 4),
+  my_ets = ets:new(my_ets, [public, named_table]),
+
     {Opts, Configs} = check_args(getopt:parse(cli_options(), Args)),
     ok = maybe_show_usage(Opts),
     ok = maybe_net_node(Opts),
@@ -94,7 +98,7 @@ main(Args) ->
     %% Copy the config into the test dir for posterity
     [ begin {ok, _} = file:copy(Config, filename:join(TestDir, filename:basename(Config))) end
       || Config <- Configs ],
-    case basho_bench_config:get(distribute_work, false) of 
+    case basho_bench_config:get(distribute_work, false) of
         true -> setup_distributed_work();
         false -> ok
     end,
@@ -288,8 +292,8 @@ get_addr_args() ->
     StrAddrs = [inet:ntoa(Addr) || Addr <- Addrs],
     string:join(StrAddrs, " ").
 setup_distributed_work() ->
-    case node() of 
-        'nonode@nohost' -> 
+    case node() of
+        'nonode@nohost' ->
             ?STD_ERR("Basho bench not started in distributed mode, and distribute_work = true~n", []),
             halt(1);
         _ -> ok
@@ -312,8 +316,8 @@ setup_distributed_work() ->
 
 
 deploy_module(Module) ->
-    case basho_bench_config:get(distribute_work, false) of 
-        true -> 
+    case basho_bench_config:get(distribute_work, false) of
+        true ->
             Nodes = nodes(),
             {Module, Binary, Filename} = code:get_object_code(Module),
             rpc:multicall(Nodes, code, load_binary, [Module, Filename, Binary]);
@@ -330,19 +334,19 @@ distribute_app(App) ->
     EbinsDir = lists:filter(fun(CodePathDir) -> string:substr(CodePathDir, 1, LibDirLen) ==  LibDir end, code:get_path()),
     StripEndFun = fun(Path) ->
         PathLen = string:len(Path),
-        case string:substr(Path, PathLen - string:len(CodeExtension) + 1, string:len(Path)) of 
+        case string:substr(Path, PathLen - string:len(CodeExtension) + 1, string:len(Path)) of
             CodeExtension ->
                 {true, string:substr(Path, 1, PathLen - string:len(CodeExtension))};
             _ -> false
         end
-    end, 
+    end,
     EbinDirDistributeFun = fun(EbinDir) ->
         {ok, Beams} = erl_prim_loader:list_dir(EbinDir),
         Modules = lists:filtermap(StripEndFun, Beams),
         ModulesLoaded = [code:load_abs(filename:join(EbinDir, ModFileName)) || ModFileName <- Modules],
         lists:foreach(fun({module, Module}) -> deploy_module(Module) end, ModulesLoaded)
     end,
-    lists:foreach(EbinDirDistributeFun, EbinsDir),    
+    lists:foreach(EbinDirDistributeFun, EbinsDir),
     ok.
 %% just a utility, should be in basho_bench_utils.erl
 %% but 's' is for multiple utilities, and so far this
