@@ -40,7 +40,7 @@ cli_options() ->
 
 main(Args) ->
   shards:start(),
-  shards:new(xyz, [], 4),
+  shards:new(xyz, []),
   my_ets = ets:new(my_ets, [public, named_table]),
 
     {Opts, Configs} = check_args(getopt:parse(cli_options(), Args)),

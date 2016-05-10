@@ -6,7 +6,7 @@
 new(_Id) ->
   %Name = shards_owner:shard_name(shards, erlang:phash2(os:timestamp())),
   %State = shards:new(Name, [], 8),
-  State = {xyz, {shards_local, set, 4}},
+  State = {xyz, shards:state(xyz)},
   {ok, State}.
 
 run(get, _KeyGen, _ValueGen, {Table, _S} = State) ->
